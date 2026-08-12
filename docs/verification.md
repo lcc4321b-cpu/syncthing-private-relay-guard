@@ -18,6 +18,13 @@ $errors = $null
 $errors
 ```
 
+```bash
+bash -n macos/install-agent.sh
+zsh -n macos/start-syncthing.sh
+plutil -lint macos/io.github.syncthing-private-relay-guard.plist
+SYNCTHING_BIN=/usr/bin/true zsh macos/start-syncthing.sh
+```
+
 ## Linux runtime checks
 
 ```bash
@@ -51,6 +58,17 @@ Get-NetTCPConnection -State Listen -LocalPort 8384
 Get-Process syncthing
 ```
 
+## macOS runtime checks
+
+```bash
+launchctl print "gui/$(id -u)/io.github.syncthing-private-relay-guard"
+lsof -nP -iTCP:8384 -sTCP:LISTEN
+pgrep -fl syncthing
+```
+
+Only one LaunchAgent should own the Syncthing process. The installer stops before
+making changes if it detects another agent that already launches Syncthing.
+
 ## Pre-publication secret scan
 
 Review every match before making the repository public:
@@ -58,4 +76,3 @@ Review every match before making the repository public:
 ```bash
 git grep -nEi 'token=|api[_-]?key|password|secret|device.?id|([0-9]{1,3}\.){3}[0-9]{1,3}'
 ```
-
