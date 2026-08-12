@@ -1,0 +1,15 @@
+# Local incident notes may contain hostnames, device IDs, or addresses.
+syncthing_repair_receipt_*.md
+
+# Local configuration and secrets.
+.env
+*.local
+*.secret
+config.local.*
+
+# OS and editor files.
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+

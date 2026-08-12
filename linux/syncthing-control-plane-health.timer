@@ -1,0 +1,13 @@
+[Unit]
+Description=Periodically validate a private Syncthing control plane
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30s
+Persistent=true
+Unit=syncthing-control-plane-health.service
+
+[Install]
+WantedBy=timers.target
+

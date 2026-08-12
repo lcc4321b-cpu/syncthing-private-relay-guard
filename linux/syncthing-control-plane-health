@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+RELAY_PORT="${RELAY_PORT:-22067}"
+DISCOVERY_PORT="${DISCOVERY_PORT:-8443}"
+RELAY_SERVICE="${RELAY_SERVICE:-strelaysrv}"
+DISCOVERY_SERVICE="${DISCOVERY_SERVICE:-stdiscosrv}"
+
+log() {
+  logger -t syncthing-control-plane-health -- "$*"
+  printf '%s\n' "$*"
+}
+
+ensure_firewall_port() {
+  local port="$1"
+
+  if ! firewall-cmd --permanent --quiet --query-port="${port}/tcp"; then
+    log "restoring permanent firewalld rule for ${port}/tcp"
+    firewall-cmd --permanent --quiet --add-port="${port}/tcp"
+  fi
+  if ! firewall-cmd --quiet --query-port="${port}/tcp"; then
+    log "restoring runtime firewalld rule for ${port}/tcp"
+    firewall-cmd --quiet --add-port="${port}/tcp"
+  fi
+}
+
+ensure_service() {
+  local service="$1"
+
+  if ! systemctl is-active --quiet "$service"; then
+    log "$service is inactive; restarting it"
+    systemctl restart "$service"
+  fi
+}
+
+ensure_listener() {
+  local port="$1"
+  local service="$2"
+
+  if ! ss -lntH "sport = :${port}" | grep -q .; then
+    log "port $port is not listening; restarting $service"
+    systemctl restart "$service"
+  fi
+}
+
+if ! systemctl is-active --quiet firewalld; then
+  log "firewalld is inactive; starting it"
+  systemctl start firewalld
+fi
+
+ensure_firewall_port "$RELAY_PORT"
+ensure_firewall_port "$DISCOVERY_PORT"
+ensure_service "$RELAY_SERVICE"
+ensure_service "$DISCOVERY_SERVICE"
+ensure_listener "$RELAY_PORT" "$RELAY_SERVICE"
+ensure_listener "$DISCOVERY_PORT" "$DISCOVERY_SERVICE"
+
+firewall-cmd --quiet --query-port="${RELAY_PORT}/tcp"
+firewall-cmd --quiet --query-port="${DISCOVERY_PORT}/tcp"
+systemctl is-active --quiet "$RELAY_SERVICE" "$DISCOVERY_SERVICE"
+ss -lntH "sport = :${RELAY_PORT}" | grep -q .
+ss -lntH "sport = :${DISCOVERY_PORT}" | grep -q .
+

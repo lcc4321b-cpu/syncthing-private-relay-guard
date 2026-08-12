@@ -1,0 +1,10 @@
+[Unit]
+Description=Validate and repair a private Syncthing control plane
+After=network-online.target firewalld.service
+Wants=network-online.target firewalld.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/sysconfig/syncthing-control-plane-health
+ExecStart=/usr/local/sbin/syncthing-control-plane-health
+
